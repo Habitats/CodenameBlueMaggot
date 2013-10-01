@@ -25,27 +25,29 @@ public class ConnectionManager {
 	public DecimalFormat formater;
 	private boolean doWrite;
 	private boolean doRead;
-	
+
 	// private int numPlayers = 2;
 
 	public ConnectionManager(ConnectionDelegate delegate) {
 		this.delegate = delegate;
 		formater = new DecimalFormat("#00000");
-	
+
 	}
-	public void endConnection(){
-		try{
-		if(client != null)
-			client.close();
-		if(listener != null)
-			listener.close();
-		doWrite = false;
-		doRead = false;
-	}catch (Exception e) {
-		// TODO: handle exception
-		delegate.connectionFailed(e.getLocalizedMessage());
+
+	public void endConnection() {
+		try {
+			if (client != null)
+				client.close();
+			if (listener != null)
+				listener.close();
+			doWrite = false;
+			doRead = false;
+		} catch (Exception e) {
+			// TODO: handle exception
+			delegate.connectionFailed(e.getLocalizedMessage());
+		}
 	}
-	}
+
 	public void becomeHost() {
 		try {
 			listener = new ServerSocket(7227, 2);
@@ -57,18 +59,18 @@ public class ConnectionManager {
 		TimerTask acceptLoop = new TimerTask() {
 			@Override
 			public void run() {
-			
+
 				try {
-			//		listener.setSoTimeout(10000);
+					// listener.setSoTimeout(10000);
 					client = listener.accept();
-				
+
 				} catch (IOException e) {
-					
+
 					delegate.connectionFailed(e.getLocalizedMessage());
 					this.cancel();
 					return;
 				}
-				String terrainMsg = "" + GameState.getInstance().getSelectedLevelBackground().getName() +"'" + GameState.getInstance().getSelectedLevelTerrain().getName();
+				String terrainMsg = "" + GameState.getInstance().getSelectedLevelBackground().getName() + "'" + GameState.getInstance().getSelectedLevelTerrain().getName();
 				int len = terrainMsg.length();
 				String header = "" + to5DigitString(len);
 				try {
@@ -107,23 +109,22 @@ public class ConnectionManager {
 				delegate.connectionFailed(e.getLocalizedMessage());
 				return;
 			}
-			
-				try {
-					while(in.available()>0){
-					in.read();
-					}
-					
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					delegate.connectionFailed(e.getLocalizedMessage());
-				}
-			}
-			startListenerThread();
-			startWritingThread();
-			delegate.startOnlineGame();
 
+			try {
+				while (in.available() > 0) {
+					in.read();
+				}
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				delegate.connectionFailed(e.getLocalizedMessage());
+			}
 		}
-	
+		startListenerThread();
+		startWritingThread();
+		delegate.startOnlineGame();
+
+	}
 
 	public void joinGame(final String adr) {
 
@@ -141,14 +142,13 @@ public class ConnectionManager {
 					return;
 				}
 				System.out.println("Connected!");
-				
-			
+
 				byte[] byteHeader = new byte[5];
-				
-				
-				
+
 				try {
-					while(client.getInputStream().available() <5){};
+					while (client.getInputStream().available() < 5) {
+					}
+					;
 					client.getInputStream().read(byteHeader, 0, 5);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
@@ -157,13 +157,15 @@ public class ConnectionManager {
 					return;
 				}
 				int len = Integer.parseInt(new String(byteHeader));
-				
+
 				byte[] levelData = new byte[len];
 				try {
-					
-					while(client.getInputStream().available() <len){};
+
+					while (client.getInputStream().available() < len) {
+					}
+					;
 					client.getInputStream().read(levelData, 0, len);
-					
+
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					delegate.connectionFailed(e.getLocalizedMessage());
@@ -172,8 +174,8 @@ public class ConnectionManager {
 				}
 				String levelPaths = new String(levelData);
 				String[] paths = levelPaths.split("'");
-				delegate.setLevel("./lvl/" +paths[1],"./lvl/" + paths[0]);
-				
+				delegate.setLevel("./lvl/" + paths[1], "./lvl/" + paths[0]);
+
 				this.cancel();
 				init();
 				// TODO Auto-generated method stub
@@ -188,7 +190,6 @@ public class ConnectionManager {
 
 	private void startListenerThread() {
 
-		
 		readThread = new Thread() {
 			@Override
 			public void run() {
@@ -196,7 +197,7 @@ public class ConnectionManager {
 					try {
 						Thread.sleep(sleepTime);
 					} catch (InterruptedException e) {
-						
+
 						e.printStackTrace();
 					}
 					int offset = 0;
@@ -217,29 +218,28 @@ public class ConnectionManager {
 						}
 
 						String head = new String(header);
-						if(head.length()<6)
+						if (head.length() < 6)
 							continue;
-						
-						double len ;
+
+						double len;
 						try {
-							len =  Double.parseDouble((head.substring(1, 6)));
+							len = Double.parseDouble((head.substring(1, 6)));
 						} catch (Exception e) {
 							// TODO: handle exception
 							continue;
 						}
 						byte[] data = new byte[(int) len];
 						offset = 0;
-						
+
 						remaining = data.length;
 
-						while(in.available()< len){
-						
+						while (in.available() < len) {
+
 						}
 						while (remaining > 0) {
 							remaining -= in.read(data, offset, data.length - offset);
 							offset = header.length - remaining;
 						}
-					
 
 						synchronized (delegate) {
 							delegate.readData(data);
@@ -247,10 +247,9 @@ public class ConnectionManager {
 
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
-						
-							delegate.connectionFailed(e.getLocalizedMessage());
-						
-						
+
+						delegate.connectionFailed(e.getLocalizedMessage());
+
 						return;
 					}
 				}
@@ -260,7 +259,6 @@ public class ConnectionManager {
 
 	}
 
-	
 	private void startWritingThread() {
 		writeThread = new Thread() {
 			@Override
@@ -297,6 +295,7 @@ public class ConnectionManager {
 		};
 		writeThread.start();
 	}
+
 	private String to5DigitString(double x) {
 
 		if (x >= 0) {
